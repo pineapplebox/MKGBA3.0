@@ -1,12 +1,19 @@
 "use strict";
 /*
- Copyright (C) 2012-2019 Grant Galitz
-
- Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
- The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * This file is part of IodineGBA
+ *
+ * Copyright (C) 2012-2013 Grant Galitz
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * version 2 as published by the Free Software Foundation.
+ * The full license is available at http://www.gnu.org/licenses/gpl.html
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
  */
 var games = {
     "advancewars":"Advance Wars",
@@ -204,159 +211,4 @@ function removeEvent(sEvent, oElement, fListener) {
     catch (error) {
         oElement.detachEvent("on" + sEvent, fListener);    //Pity for IE.
     }
-}
-function registerIodineHandler() {
-    try {
-        /*
-        We utilize SharedArrayBuffer and Atomics API,
-        which browsers prior to 2016 do not support:
-        */
-        if (typeof SharedArrayBuffer != "function" || typeof Atomics != "object") {
-            throw null;
-        }
-        else if (!IodineGUI.defaults.toggleOffthreadCPU && IodineGUI.defaults.toggleOffthreadGraphics) {
-            //Try starting Iodine normally, but initialize offthread gfx:
-            IodineGUI.Iodine = new IodineGBAWorkerGfxShim();
-        }
-        else if (IodineGUI.defaults.toggleOffthreadGraphics) {
-            //Try starting Iodine in a webworker:
-            IodineGUI.Iodine = new IodineGBAWorkerShim();
-            //In order for save on page unload, this needs to be done:
-            addEvent("beforeunload", window, registerBeforeUnloadHandler);
-        }
-		else {
-			throw null;
-		}
-    }
-    catch (e) {
-        //Otherwise just run on-thread:
-        IodineGUI.Iodine = new GameBoyAdvanceEmulator();
-    }
-}
-function registerBeforeUnloadHandler(e) {
-    IodineGUI.Iodine.pause();
-    if (e.preventDefault) {
-        e.preventDefault();
-    }
-    return "IodineGBA needs to process your save data, leaving now may result in not saving current data.";
-}
-function initTimer() {
-	IodineGUI.Iodine.setIntervalRate(+IodineGUI.defaults.timerRate);
-    IodineGUI.coreTimerID = setInterval(function () {
-        IodineGUI.Iodine.timerCallback(((+(new Date()).getTime()) - (+IodineGUI.startTime)) >>> 0);
-    }, IodineGUI.defaults.timerRate | 0);
-	findRealClock();
-}
-function calculateTiming() {
-	IodineGUI.Iodine.setIntervalRate(+IodineGUI.defaults.timerRate);
-	findRealClock();
-}
-function startTimer() {
-	IodineGUI.coreTimerID = setInterval(function () {
-        IodineGUI.Iodine.timerCallback(((+(new Date()).getTime()) - (+IodineGUI.startTime)) >>> 0);
-    }, IodineGUI.defaults.timerRate | 0);
-}
-function updateTimer(newRate) {
-	newRate = newRate | 0;
-	if ((newRate | 0) != (IodineGUI.defaults.timerRate | 0)) {
-		IodineGUI.defaults.timerRate = newRate | 0;
-		IodineGUI.Iodine.setIntervalRate(+IodineGUI.defaults.timerRate);
-		if (IodineGUI.isPlaying) {
-			if (IodineGUI.coreTimerID) {
-				clearInterval(IodineGUI.coreTimerID);
-			}
-			initTimer();
-		}
-	}
-}
-function findRealClock() {
-	var count = 0;
-	var startTime = +(new Date()).getTime();
-	var realTimer = setInterval(function () {
-		if (!IodineGUI.suspended) {
-			count = ((count | 0) + 1) | 0;
-			if (count == 20) {
-				var timeDiff = ((+(new Date()).getTime()) - (+startTime)) >>> 0;
-				var trueRate = timeDiff / 20;
-				if ((+trueRate) > 17) {
-					count = 0;
-				}
-				else {
-					var delta = +((+trueRate) - (IodineGUI.defaults.timerRate | 0));
-					if ((IodineGUI.defaults.timerRate | 0) == 16) {
-						if (delta > -0.1 && delta < 0.1) {
-							clearInterval(realTimer);
-						}
-						else if ((trueRate - 1000/64) > -0.1 && (trueRate - 1000/64) < 0.1) {
-							IodineGUI.Iodine.setIntervalRate(1000/64);
-							clearInterval(realTimer);
-						}
-						else if ((trueRate - 50/3) > -0.1 && (trueRate - 50/3) < 0.1) {
-							IodineGUI.Iodine.setIntervalRate(50/3);
-							clearInterval(realTimer);
-						}
-						else {
-							count = 0;
-						}
-					}
-					else if ((IodineGUI.defaults.timerRate | 0) == 4) {
-						if (delta > -0.1 && delta < 0.1) {
-							clearInterval(realTimer);
-						}
-						else if ((trueRate - 25/6) > -0.1 && (trueRate - 25/6) < 0.1) {
-							IodineGUI.Iodine.setIntervalRate(25/6);
-							clearInterval(realTimer);
-						}
-						else {
-							count = 0;
-						}
-					}
-					else if ((IodineGUI.defaults.timerRate | 0) == 8) {
-						if (delta > -0.1 && delta < 0.1) {
-							clearInterval(realTimer);
-						}
-						else if ((trueRate - 25/3) > -0.1 && (trueRate - 25/3) < 0.1) {
-							IodineGUI.Iodine.setIntervalRate(25/3);
-							clearInterval(realTimer);
-						}
-						else {
-							count = 0;
-						}
-					}
-					else {
-						if (delta > -0.1 && delta < 0.1) {
-							clearInterval(realTimer);
-						}
-						else if (trueRate < 16) {
-							IodineGUI.Iodine.setIntervalRate(+trueRate);
-							clearInterval(realTimer);
-						}
-						else {
-							count = 0;
-						}
-					}
-					
-				}
-			}
-		}
-		else {
-			count = 0;
-		}
-    }, IodineGUI.defaults.timerRate | 0);
-}
-function registerBlitterHandler() {
-    IodineGUI.Blitter = new GfxGlueCode(240, 160);
-    IodineGUI.Blitter.attachCanvas(document.getElementById("emulator_target"));
-    IodineGUI.Iodine.attachGraphicsFrameHandler(IodineGUI.Blitter);
-    IodineGUI.Blitter.attachGfxPostCallback(function () {
-        if (IodineGUI.currentSpeed[0]) {
-            var speedDOM = document.getElementById("speed");
-            speedDOM.textContent = "Speed: " + IodineGUI.currentSpeed[1] + "%";
-        }
-    });
-}
-function registerAudioHandler() {
-    var Mixer = new GlueCodeMixer(document.getElementById("play"));
-    IodineGUI.mixerInput = new GlueCodeMixerInput(Mixer);
-    IodineGUI.Iodine.attachAudioHandler(IodineGUI.mixerInput);
 }
