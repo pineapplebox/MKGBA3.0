@@ -17,7 +17,7 @@ GameBoyAdvanceRendererProxy.prototype.initialize = function () {
     this.IOData16 = getUint16View(this.IOData8);
     this.IOData32 = getInt32View(this.IOData8);
     this.gfxState = this.IOCore.gfxState;
-    this.renderer = getGameBoyAdvanceGraphicsRenderer(this.IOCore.coreExposed, !!this.IOCore.SKIPBoot);
+    this.renderer = GameBoyAdvanceGraphicsRenderer(this.IOCore.coreExposed, !!this.IOCore.SKIPBoot);
 }
 GameBoyAdvanceRendererProxy.prototype.incrementScanLineQueue = function () {
     this.renderer.incrementScanLineQueue();
