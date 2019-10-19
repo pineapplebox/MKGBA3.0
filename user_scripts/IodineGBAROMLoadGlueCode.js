@@ -10,18 +10,18 @@
  */
 function attachBIOS(BIOS) {
     try {
-        IodineGUI.Iodine.attachBIOS(new Uint8Array(BIOS));
+        Iodine.attachBIOS(new Uint8Array(BIOS));
     }
     catch (error) {
-        IodineGUI.Iodine.attachBIOS(BIOS);
+        Iodine.attachBIOS(BIOS);
     }
 }
 function attachROM(ROM) {
     try {
-        IodineGUI.Iodine.attachROM(new Uint8Array(ROM));
+        Iodine.attachROM(new Uint8Array(ROM));
     }
     catch (error) {
-        IodineGUI.Iodine.attachROM(ROM);
+        Iodine.attachROM(ROM);
     }
 }
 function fileLoadShimCode(files, ROMHandler) {
