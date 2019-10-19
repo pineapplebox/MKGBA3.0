@@ -23,7 +23,7 @@ function ImportSaveCallback(name, callbackFunc, callbackFuncNoSave) {
     callbackFuncNoSave();
 }
 function ExportSave() {
-    IodineGUI.Iodine.exportSave();
+    Iodine.exportSave();
 }
 function ExportSaveCallback(name, save) {
     if (name != "") {
@@ -36,8 +36,8 @@ function ExportSaveCallback(name, save) {
     }
 }
 function registerSaveHandlers() {
-    IodineGUI.Iodine.attachSaveExportHandler(ExportSaveCallback);
-    IodineGUI.Iodine.attachSaveImportHandler(ImportSaveCallback);
+    Iodine.attachSaveExportHandler(ExportSaveCallback);
+    Iodine.attachSaveImportHandler(ImportSaveCallback);
 }
 function import_save(blobData) {
     blobData = decodeBlob(blobData);
